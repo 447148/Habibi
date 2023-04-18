@@ -1,0 +1,43 @@
+functionbeat.inputs:
+  - enabled: true
+    type: log
+
+functionbeat.provider.aws.endpoint: "s3.amazonaws.com"
+functionbeat.provider.aws.deploy_bucket: "functiebeatbucketyeah420"
+functionbeat.provider.aws.functions:
+- name: cloudwatch
+  enabled: true
+  type: cloudwatch_logs
+  role: arn:aws:iam::741740438019:role/LabRole
+  description: "Functionbeat monitoring CPU Utilization and Network Packets In metrics"
+  triggers:
+    - log_group_name: /aws/lambda/my-function
+  fields:
+    level: info
+  fields_under_root: true
+functionbeat.modules:
+- module: aws
+  cloudwatch_metrics:
+    enabled: true
+    var.namespace: "AWS/EC2"
+    var.metricsets:
+      - "CPUUtilization"
+      - "NetworkPacketsIn"
+    var.dimensions:
+      InstanceId: ${INSTANCE_ID}
+    var.period: 300s
+output.elasticsearch:
+  hosts: ["0.0.0.0:9200"]
+  username: "elastic"
+  password: "changeme"
+setup.template.settings:
+  index.number_of_shards: 1
+  index.number_of_replicas: 0
+setup.kibana:
+  host: "0.0.0.0:5601"
+logging.to_files: true
+logging.files:
+  path: /var/log/functionbeat
+  name: functionbeat
+  keepfiles: 7
+  permissions: 0644
